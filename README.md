@@ -277,10 +277,6 @@ See [Development](#-development) section above.
 
 ### v1.0.0 - Web App
 
-## 🤝 Contributing
-
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
 ## 📄 License
 
 MIT License - See [LICENSE](LICENSE) file for details
