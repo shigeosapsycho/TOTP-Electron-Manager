@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Connection Test</title>
+</head>
+<body>
+    <h1>Backend Connection Test</h1>
+    <button onclick="testConnection()">Test Connection</button>
+    <pre id="result"></pre>
+
+    <script>
+    async function testConnection() {
+        const result = document.getElementById('result');
+        result.textContent = 'Testing connection to backend...';
+
+        try {
+            console.log('Attempting to fetch from:', 'http://localhost:8000/api/accounts');
+
+            const response = await fetch('http://localhost:8000/api/accounts', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                mode: 'cors'
+            });
+
+            console.log('Response status:', response.status);
+            console.log('Response headers:', [...response.headers.entries()]);
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            result.textContent = `✅ SUCCESS!\n\nConnection working!\nFound ${data.length} accounts\n\nFirst account:\n${JSON.stringify(data[0], null, 2)}`;
+
+            console.log('Data received:', data.length, 'accounts');
+        } catch (error) {
+            console.error('Connection error:', error);
+            result.textContent = `❌ ERROR: ${error.message}\n\nStack trace:\n${error.stack}\n\nCheck browser console (F12) for more details.`;
+        }
+    }
+
+    // Auto-test on page load
+    window.addEventListener('load', () => {
+        setTimeout(testConnection, 500);
+    });
+    </script>
+</body>
+</html>

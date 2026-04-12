@@ -1,0 +1,74 @@
+{
+  "name": "totp-manager",
+  "version": "2.2.0",
+  "private": true,
+  "description": "TOTP Manager - Local desktop app for managing your 2FA codes",
+  "author": "",
+  "license": "MIT",
+  "main": "electron.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "electron": "electron .",
+    "electron-dev": "electron .",
+    "electron-build": "electron-builder",
+    "electron-build-win": "electron-builder --win",
+    "electron-build-mac": "electron-builder --mac",
+    "electron-build-linux": "electron-builder --linux"
+  },
+  "dependencies": {
+    "@headlessui/react": "^2.2.10",
+    "@heroicons/react": "^2.2.0",
+    "@hookform/resolvers": "^5.2.2",
+    "axios": "^1.15.0",
+    "electron-store": "^8.1.0",
+    "next": "16.2.3",
+    "otpauth": "^9.1.4",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-hook-form": "^7.72.1",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "electron": "^41.2.0",
+    "electron-builder": "^24.6.4",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.3",
+    "sharp": "^0.34.5",
+    "tailwindcss": "^4",
+    "to-ico": "^1.1.5",
+    "typescript": "^5"
+  },
+  "build": {
+    "appId": "com.totpmanager.app",
+    "productName": "TOTP Manager",
+    "directories": {
+      "output": "dist-final"
+    },
+    "files": [
+      "out/**/*",
+      "electron.js",
+      "preload.js",
+      "package.json",
+      "build/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.productivity"
+    },
+    "linux": {
+      "target": "AppImage",
+      "category": "Utility"
+    }
+  }
+}

@@ -1,0 +1,218 @@
+/**
+ * AccountCard component - displays a single TOTP account with code and countdown
+ */
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Account, TOTPResponse } from '@/types';
+import { accountsAPI } from '@/lib/api';
+import { formatCode, formatTimeRemaining, getTimeColor, copyToClipboard } from '@/lib/utils';
+import { DocumentDuplicateIcon, PencilIcon, TrashIcon, CheckIcon } from '@heroicons/react/24/outline';
+
+interface AccountCardProps {
+  account: Account;
+  onUpdate?: () => void;
+  onDelete?: () => void;
+  onEdit?: (account: Account) => void;
+  darkMode?: boolean;
+  onDeleteConfirm?: () => void;
+  isSelected?: boolean;
+  onSelect?: () => void;
+}
+
+export default function AccountCard({
+  account,
+  onUpdate,
+  onDelete,
+  onEdit,
+  darkMode = false,
+  onDeleteConfirm,
+  isSelected = false,
+  onSelect,
+}: AccountCardProps) {
+  const [totp, setTotp] = useState<TOTPResponse | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  // Fetch TOTP code
+  const fetchTOTP = async () => {
+    try {
+      const response = await accountsAPI.generateTOTP(account.id);
+      setTotp(response);
+    } catch (error) {
+      console.error('Failed to generate TOTP:', error);
+    }
+  };
+
+  // Initial fetch and setup countdown
+  useEffect(() => {
+    fetchTOTP();
+
+    // Refresh TOTP code every 30 seconds
+    const interval = setInterval(() => {
+      fetchTOTP();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [account.id]);
+
+  // Update countdown every second
+  useEffect(() => {
+    if (!totp) return;
+
+    const countdownInterval = setInterval(() => {
+      setTotp((prev) => {
+        if (!prev) return null;
+        const newTimeRemaining = prev.time_remaining - 1;
+        if (newTimeRemaining <= 0) {
+          fetchTOTP();
+          return prev;
+        }
+        return { ...prev, time_remaining: newTimeRemaining };
+      });
+    }, 1000);
+
+    return () => clearInterval(countdownInterval);
+  }, [totp]);
+
+  // Handle copy to clipboard
+  const handleCopy = async () => {
+    if (!totp) return;
+    const success = await copyToClipboard(totp.code);
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  // Handle card click for selection
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't trigger selection if clicking on action buttons
+    const target = e.target as HTMLElement;
+    if (target.closest('button')) {
+      return;
+    }
+    onSelect?.();
+  };
+
+  const cardBg = darkMode ? 'bg-gray-900' : 'bg-white';
+  const textColor = darkMode ? 'text-white' : 'text-gray-900';
+  const subtextColor = darkMode ? 'text-gray-400' : 'text-gray-500';
+  const iconColor = darkMode ? 'text-gray-500 hover:text-blue-400' : 'text-gray-400 hover:text-blue-500';
+  const deleteColor = darkMode ? 'text-gray-500 hover:text-red-400' : 'text-gray-400 hover:text-red-500';
+  const progressGreen = darkMode ? 'bg-green-600' : 'bg-green-500';
+  const progressYellow = darkMode ? 'bg-yellow-600' : 'bg-yellow-500';
+  const progressRed = darkMode ? 'bg-red-600' : 'bg-red-500';
+
+  // Selection styles
+  const selectedBorder = isSelected
+    ? 'border-4 border-blue-500 shadow-xl scale-105'
+    : darkMode
+    ? 'border-2 border-transparent hover:border-gray-700'
+    : 'border-2 border-transparent hover:border-gray-300';
+
+  const selectedBg = isSelected
+    ? darkMode
+      ? 'bg-gray-800'
+      : 'bg-blue-50'
+    : cardBg;
+
+  return (
+    <div
+      onClick={handleCardClick}
+      className={`relative rounded-lg shadow-md p-6 pt-8 hover:shadow-lg transition-all duration-300 cursor-pointer ${selectedBg} ${selectedBorder}`}
+    >
+      {/* Selection Indicator Badge */}
+      {isSelected && (
+        <div className="absolute top-3 right-3 z-10">
+          <div className="flex items-center justify-center w-8 h-8 bg-blue-500 rounded-full text-white shadow-lg">
+            <CheckIcon className="w-5 h-5" />
+          </div>
+        </div>
+      )}
+
+      {/* Header - Service and Account Name */}
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <h3 className={`text-lg font-semibold ${textColor}`}>{account.service}</h3>
+          <p className={`text-sm ${subtextColor}`}>{account.account_name}</p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit?.(account);
+            }}
+            className={`p-2 ${iconColor} transition-colors`}
+            title="Edit account"
+          >
+            <PencilIcon className="w-5 h-5" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeleteConfirm?.();
+            }}
+            className={`p-2 ${deleteColor} transition-colors`}
+            title="Delete account"
+          >
+            <TrashIcon className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* TOTP Code Display */}
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          {totp ? (
+            <>
+              <div className="flex items-center gap-4">
+                <div className={`text-4xl font-mono font-bold tracking-wider ${textColor}`}>
+                  {formatCode(totp.code)}
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCopy();
+                  }}
+                  className={`p-2 rounded-lg transition-colors ${
+                    copied
+                      ? 'bg-green-100 text-green-600'
+                      : darkMode
+                      ? 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-300'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-700'
+                  }`}
+                  title={copied ? 'Copied!' : 'Copy to clipboard'}
+                >
+                  <DocumentDuplicateIcon className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Countdown Timer */}
+              <div className="mt-3">
+                <div className="flex items-center gap-2">
+                  <div className={`flex-1 rounded-full h-2 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                    <div
+                      className={`h-2 rounded-full transition-all duration-1000 ${
+                        totp.time_remaining > 15
+                          ? progressGreen
+                          : totp.time_remaining > 5
+                          ? progressYellow
+                          : progressRed
+                      }`}
+                      style={{ width: `${(totp.time_remaining / totp.valid_for) * 100}%` }}
+                    />
+                  </div>
+                  <span className={`text-sm font-mono font-semibold ${darkMode ? 'text-gray-300' : getTimeColor(totp.time_remaining)}`}>
+                    {formatTimeRemaining(totp.time_remaining)}
+                  </span>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className={subtextColor}>Loading...</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
