@@ -3,8 +3,12 @@
 **Version 2.2.0 - Electron Desktop App** 🎉
 
 A secure, local-only TOTP (Time-based One-Time Password) manager desktop application built with Electron, React, and TypeScript.
+![Light Mode Main Screen](https://beu.evaded.tax/i/1njgulzoihj6.gif)
+![Dark Mode Main Screen](https://beu.evaded.tax/i/7za0jhviqt3vxhi.png)
 
 > **🆕 NEW in v2.2.0**: 📥 Added CSV import functionality! You can now import accounts from CSV files exported from this app, completing the import/export workflow.
+
+![CSV Import Modal](https://beu.evaded.tax/i/u1t62jayg4.png)
 
 ## ⚡ Quick Start
 
