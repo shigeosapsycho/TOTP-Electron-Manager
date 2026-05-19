@@ -6,6 +6,10 @@
   "author": "",
   "license": "MIT",
   "main": "electron.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shigeosapsycho/TOTP-Electron-Manager.git"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -37,7 +41,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "electron": "^41.2.0",
-    "electron-builder": "^24.6.4",
+    "electron-builder": "^25.1.8",
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
     "sharp": "^0.34.5",
@@ -48,6 +52,7 @@
   "build": {
     "appId": "com.totpmanager.app",
     "productName": "TOTP Manager",
+    "publish": null,
     "directories": {
       "output": "dist-final"
     },
