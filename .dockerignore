@@ -1,0 +1,71 @@
+# Node modules (reinstalled inside container for linux arch)
+node_modules/
+frontend/node_modules/
+
+# Next.js build artifacts (rebuilt in container)
+frontend/.next/
+frontend/out/
+
+# Electron build outputs (volume-mounted)
+dist-final/
+frontend/dist-final/
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Docs
+README.md
+BUILD-OPTIONS.md
+obsidian/
+
+# Tests
+test/
+*.test.js
+*.spec.js
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Tmp
+*.tmp
+*.temp
+.cache/
+
+# Build artifacts at repo root (avoid copying old outputs into image)
+*.exe
+*.dmg
+*.zip
+*.AppImage
+
+# NOTE: do NOT add `build/` here — frontend/build/icon.* is needed by electron-builder.

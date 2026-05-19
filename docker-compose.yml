@@ -1,0 +1,79 @@
+services:
+  # Development environment (Electron in container; GUI rarely works without X forwarding)
+  totp-dev:
+    build:
+      context: .
+      target: runtime
+    container_name: totp-manager-dev
+    volumes:
+      - ./frontend:/app/frontend
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    environment:
+      - DISPLAY=${DISPLAY:-:0}
+      - NODE_ENV=development
+    network_mode: host
+    command: npm run electron-dev
+    profiles:
+      - dev
+
+  # Windows build (Wine is installed in the builder stage)
+  totp-build-windows:
+    build:
+      context: .
+      target: builder
+    container_name: totp-build-windows
+    volumes:
+      - ./dist-final:/app/frontend/dist-final
+    working_dir: /app/frontend
+    command: npm run electron-build-win
+    profiles:
+      - build
+
+  # macOS build (produces unsigned .zip - DMG would require macOS host)
+  totp-build-mac:
+    build:
+      context: .
+      target: builder
+    container_name: totp-build-mac
+    volumes:
+      - ./dist-final:/app/frontend/dist-final
+    working_dir: /app/frontend
+    command: npm run electron-build-mac
+    profiles:
+      - build
+
+  # Linux build
+  totp-build-linux:
+    build:
+      context: .
+      target: builder
+    container_name: totp-build-linux
+    volumes:
+      - ./dist-final:/app/frontend/dist-final
+    working_dir: /app/frontend
+    command: npm run electron-build-linux
+    profiles:
+      - build
+
+  # All platforms in one run
+  totp-build-all:
+    build:
+      context: .
+      target: builder
+    container_name: totp-build-all
+    volumes:
+      - ./dist-final:/app/frontend/dist-final
+    working_dir: /app/frontend
+    command: >
+      bash -c "
+      echo 'Building for Windows...' &&
+      npm run electron-build-win &&
+      echo 'Building for macOS...' &&
+      npm run electron-build-mac &&
+      echo 'Building for Linux...' &&
+      npm run electron-build-linux &&
+      echo 'All builds complete!' &&
+      ls -la dist-final/
+      "
+    profiles:
+      - build

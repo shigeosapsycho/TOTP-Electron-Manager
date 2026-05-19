@@ -63,8 +63,9 @@
       "icon": "build/icon.ico"
     },
     "mac": {
-      "target": "dmg",
-      "category": "public.app-category.productivity"
+      "target": "zip",
+      "category": "public.app-category.productivity",
+      "identity": null
     },
     "linux": {
       "target": "AppImage",

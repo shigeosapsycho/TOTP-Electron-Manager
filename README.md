@@ -12,7 +12,32 @@ A secure, local-only TOTP (Time-based One-Time Password) manager desktop applica
 
 ## ⚡ Quick Start
 
-### Electron Desktop App
+### 🐳 Option 1: Docker Builds (Cross-Platform)
+
+**Build for any platform from any OS - No Apple certificate needed!**
+
+```bash
+# Build for macOS from Windows/Linux
+./build-mac-docker.sh mac
+
+# Build for all platforms
+./build-mac-docker.sh all
+
+# Clean and rebuild
+./build-mac-docker.sh mac clean
+```
+
+**Output:** `dist-final/` with platform-specific installers
+- **Windows:** `TOTP Manager Setup 2.2.0.exe`
+- **macOS:** `TOTP Manager 2.2.0.dmg` (unsigned, right-click to open)
+- **Linux:** `TOTP Manager 2.2.0.AppImage`
+
+**Requirements:** Docker Desktop installed and running
+**Full Guide:** See [BUILD-OPTIONS.md](BUILD-OPTIONS.md)
+
+### 💻 Option 2: Traditional Electron Builds (Native)
+
+**Native builds with full debugging and code signing support**
 
 1. **Install dependencies and build:**
    ```bash
@@ -33,7 +58,7 @@ A secure, local-only TOTP (Time-based One-Time Password) manager desktop applica
 
    # Or build for specific platforms
    npm run electron-build-win   # Windows
-   npm run electron-build-mac    # macOS
+   npm run electron-build-mac    # macOS (requires Apple certificate)
    npm run electron-build-linux  # Linux
    ```
 

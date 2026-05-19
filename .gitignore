@@ -36,3 +36,6 @@ userData/
 .idea/
 *.swp
 *.swo
+
+# Obsidian Notes
+obsidian/
