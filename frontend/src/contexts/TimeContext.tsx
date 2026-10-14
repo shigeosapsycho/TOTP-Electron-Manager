@@ -1,56 +1,55 @@
 /**
  * Shared time context for synchronized TOTP timers
- * Uses epoch time to ensure all accounts sync to the same 30-second cycle
+ * Uses epoch time so every account follows the same 30-second cycle
  */
 'use client';
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
+import { TOTP_PERIOD_MS } from '@/lib/constants';
 
 interface TimeContextType {
-  currentTime: number;        // Current epoch time in milliseconds
-  currentPeriod: number;    // Current 30-second period (0, 1, 2, etc.)
-  timeRemaining: number;     // Milliseconds until next period
-  timeRemainingSeconds: number; // Seconds until next period (for display)
+  currentPeriod: number;     // Index of the current 30-second period since the epoch
+  timeRemaining: number;     // Milliseconds until the next period
 }
 
-const TimeContext = createContext<TimeContextType>({
-  currentTime: 0,
-  currentPeriod: 0,
-  timeRemaining: 30000,
-  timeRemainingSeconds: 30,
-});
+const TimeContext = createContext<TimeContextType | null>(null);
+
+function readTime(): TimeContextType {
+  const now = Date.now();
+  return {
+    currentPeriod: Math.floor(now / TOTP_PERIOD_MS),
+    timeRemaining: TOTP_PERIOD_MS - (now % TOTP_PERIOD_MS),
+  };
+}
+
+const msUntilNextSecond = () => 1000 - (Date.now() % 1000) + 1;
 
 export function TimeProvider({ children }: { children: React.ReactNode }) {
-  const [timeState, setTimeState] = useState(() => {
-    const now = Date.now();
-    const period = Math.floor(now / 30000);
-    const endOfPeriod = (period + 1) * 30000;
-    const timeRemaining = endOfPeriod - now;
-    return {
-      currentTime: now,
-      currentPeriod: period,
-      timeRemaining: timeRemaining,
-      timeRemainingSeconds: Math.ceil(timeRemaining / 1000),
-    };
-  });
+  const [timeState, setTimeState] = useState(readTime);
 
   useEffect(() => {
-    // Update time every 16ms for smooth countdowns (approximately 60fps)
-    const interval = setInterval(() => {
-      const now = Date.now();
-      const period = Math.floor(now / 30000);
-      const endOfPeriod = (period + 1) * 30000;
-      const timeRemaining = endOfPeriod - now;
+    let timer: ReturnType<typeof setTimeout>;
 
-      setTimeState({
-        currentTime: now,
-        currentPeriod: period,
-        timeRemaining: timeRemaining,
-        timeRemainingSeconds: Math.ceil(timeRemaining / 1000),
-      });
-    }, 16);
+    // Tick on whole-second boundaries: the visible countdown only changes once a second,
+    // and the progress bar is animated by CSS, so nothing needs a faster update.
+    const tick = () => {
+      setTimeState(readTime());
+      timer = setTimeout(tick, msUntilNextSecond());
+    };
+    timer = setTimeout(tick, msUntilNextSecond());
 
-    return () => clearInterval(interval);
+    // Timers are throttled while the window is hidden, so resync as soon as it is shown.
+    const resync = () => {
+      if (document.visibilityState !== 'visible') return;
+      clearTimeout(timer);
+      tick();
+    };
+    document.addEventListener('visibilitychange', resync);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', resync);
+    };
   }, []);
 
   return (

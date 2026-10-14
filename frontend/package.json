@@ -23,19 +23,10 @@
     "electron-build-linux": "electron-builder --linux"
   },
   "dependencies": {
-    "@headlessui/react": "^2.2.10",
-    "@heroicons/react": "^2.2.0",
-    "@hookform/resolvers": "^5.2.2",
-    "axios": "^1.15.0",
-    "electron-store": "^8.1.0",
-    "next": "16.2.3",
-    "otpauth": "^9.1.4",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "react-hook-form": "^7.72.1",
-    "zod": "^4.3.6"
+    "electron-store": "^8.1.0"
   },
   "devDependencies": {
+    "@heroicons/react": "^2.2.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -44,6 +35,10 @@
     "electron-builder": "^25.1.8",
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
+    "next": "16.2.3",
+    "otpauth": "^9.1.4",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
     "sharp": "^0.34.5",
     "tailwindcss": "^4",
     "to-ico": "^1.1.5",

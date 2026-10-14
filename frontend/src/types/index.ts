@@ -28,17 +28,4 @@ export interface AccountUpdate {
   order?: number;
 }
 
-export interface TOTPResponse {
-  code: string;
-  valid_for: number;
-  time_remaining: number;
-  generated_at: number;
-}
-
-export interface AccountWithTOTP extends Account {
-  totp?: TOTPResponse;
-}
-
-export interface APIError {
-  detail: string;
-}
+export type AccountSecret = Pick<Account, 'encrypted_secret' | 'secret_key'>;

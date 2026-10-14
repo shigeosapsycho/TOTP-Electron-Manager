@@ -123,7 +123,7 @@ The frontend communicates with the Electron main process via:
 - **Framework**: Next.js 16.2.3 (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS 4.0
-- **UI Components**: Headless UI, Heroicons
+- **Icons**: Heroicons
 - **State Management**: React hooks (useState, useEffect, useMemo)
 - **TOTP Generation**: otpauth library (client-side)
 
@@ -144,7 +144,6 @@ The frontend communicates with the Electron main process via:
 - `electron`: Desktop app framework
 - `electron-store`: Encrypted local storage
 - `otpauth`: TOTP code generation
-- `@headlessui/react`: Accessible UI components
 - `@heroicons/react`: Icon library
 
 ### Dev Dependencies

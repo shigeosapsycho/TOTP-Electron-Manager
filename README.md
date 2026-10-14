@@ -314,7 +314,6 @@ MIT License - See [LICENSE](LICENSE) file for details
 
 - Built with [Electron](https://www.electronjs.org/)
 - TOTP generation using [otpauth](https://github.com/hect0/otpauth)
-- UI components from [Headless UI](https://headlessui.com/)
 - Icons from [Heroicons](https://heroicons.com/)
 
 ---

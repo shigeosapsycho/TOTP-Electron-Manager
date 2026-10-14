@@ -12,16 +12,24 @@
   --foreground: #ededed;
 }
 
-.dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* TOTP countdown: slides the bar out of its overflow-hidden track over one period.
+   Duration and start offset are set inline per card. */
+@keyframes countdown-slide {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+
+.countdown-bar {
+  animation-name: countdown-slide;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
 }
 
 /* Custom scrollbar for better UX */

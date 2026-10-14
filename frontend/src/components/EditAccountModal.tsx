@@ -48,26 +48,21 @@ export default function EditAccountModal({ account, onClose, onSuccess, darkMode
   })();
 
   // Fetch the current secret key when modal opens
+  const { encrypted_secret, secret_key } = account;
   useEffect(() => {
-    const fetchSecret = async () => {
-      if (account.secret_key) {
-        // Secret is already available (not encrypted)
-        setCurrentSecret(account.secret_key);
-      } else if (account.encrypted_secret && typeof window !== 'undefined' && window.electronAPI) {
-        // Decrypt the secret
-        try {
-          const result = await window.electronAPI.decryptSecret(account.encrypted_secret);
-          if (result.success && result.secret) {
-            setCurrentSecret(result.secret);
-          }
-        } catch (error) {
-          console.error('Failed to decrypt secret:', error);
-        }
-      }
-    };
+    let cancelled = false;
 
-    fetchSecret();
-  }, [account]);
+    accountsAPI
+      .getSecret({ encrypted_secret, secret_key })
+      .then((secret) => {
+        if (!cancelled) setCurrentSecret(secret);
+      })
+      .catch((error) => console.error('Failed to load secret:', error));
+
+    return () => {
+      cancelled = true;
+    };
+  }, [encrypted_secret, secret_key]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -84,12 +79,6 @@ export default function EditAccountModal({ account, onClose, onSuccess, darkMode
     }
     if (formData.account_name !== undefined && !formData.account_name.trim()) {
       newErrors.account_name = 'Account name cannot be empty';
-    }
-    if (formData.secret_key !== undefined && formData.secret_key.trim() !== '') {
-      // Secret key is optional (if not provided, keep existing), but if provided must not be just spaces
-      if (!formData.secret_key.trim()) {
-        newErrors.secret_key = 'Secret key cannot be empty';
-      }
     }
 
     setErrors(newErrors);
@@ -120,18 +109,14 @@ export default function EditAccountModal({ account, onClose, onSuccess, darkMode
       await accountsAPI.update(account.id, updateData);
       onSuccess();
       onClose();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to update account:', error);
-      if (error.response?.data?.detail) {
-        setErrors({ secret_key: error.response.data.detail });
-      } else {
-        setAlertModal({
-          isOpen: true,
-          title: 'Error',
-          message: 'Failed to update account. Please check your inputs and try again.',
-          type: 'error',
-        });
-      }
+      setAlertModal({
+        isOpen: true,
+        title: 'Error',
+        message: 'Failed to update account. Please check your inputs and try again.',
+        type: 'error',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -141,11 +126,10 @@ export default function EditAccountModal({ account, onClose, onSuccess, darkMode
   const textColor = darkMode ? 'text-white' : 'text-gray-900';
   const labelColor = darkMode ? 'text-gray-300' : 'text-gray-700';
   const inputBg = darkMode ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500';
-  const inputFocus = darkMode ? 'focus:ring-blue-500 focus:border-blue-500' : 'focus:ring-blue-500 focus:border-blue-500';
+  const inputFocus = 'focus:ring-blue-500 focus:border-blue-500';
   const errorText = darkMode ? 'text-red-400' : 'text-red-600';
-  const helpText = darkMode ? 'text-gray-500' : 'text-gray-500';
+  const helpText = 'text-gray-500';
   const secondaryBtn = darkMode ? 'border-gray-700 text-gray-300 hover:bg-gray-800' : 'border-gray-300 text-gray-700 hover:bg-gray-50';
-  const infoBg = darkMode ? 'bg-blue-900/50 border-blue-700 text-blue-200' : 'bg-blue-50 border-blue-200 text-blue-800';
 
   return (
     <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4 backdrop-blur-sm">

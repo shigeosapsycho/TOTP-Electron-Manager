@@ -126,7 +126,3 @@ docker-compose logs totp-build-mac
 ```bash
 docker-compose run --rm totp-build-mac ls -la dist-final/
 ```
-
----
-
-**Full Documentation:** See [deployment/docker-builds.md](obsidian/deployment/docker-builds.md)

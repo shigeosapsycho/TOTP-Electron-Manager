@@ -66,7 +66,7 @@ interface LastPassAccount {
   originalUserName?: string;
   service?: string;
   accountID?: string;
-  folderData?: any;
+  folderData?: unknown;
   isFavorite?: boolean;
   timeStep?: number;
   digits?: number;
@@ -75,12 +75,14 @@ interface LastPassAccount {
 }
 
 interface LastPassExport {
-  folders?: any[];
+  folders?: unknown[];
   accounts: LastPassAccount[];
   version?: number;
   localDeviceId?: string | null;
   deviceName?: string;
 }
+
+const errorMessage = (error: unknown, fallback: string) => (error instanceof Error && error.message) || fallback;
 
 export default function AddAccountModal({ onClose, onSuccess, darkMode = false }: AddAccountModalProps) {
   const [activeTab, setActiveTab] = useState<ImportTab>('single');
@@ -105,23 +107,11 @@ export default function AddAccountModal({ onClose, onSuccess, darkMode = false }
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [importResults, setImportResults] = useState<ImportResults | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   // Debounce input text to avoid excessive re-renders
   useEffect(() => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
-
-    debounceRef.current = setTimeout(() => {
-      setDebouncedInputText(inputText);
-    }, 300);
-
-    return () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-    };
+    const timer = setTimeout(() => setDebouncedInputText(inputText), 300);
+    return () => clearTimeout(timer);
   }, [inputText]);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,16 +121,15 @@ export default function AddAccountModal({ onClose, onSuccess, darkMode = false }
     setErrors((prev) => ({ ...prev, [name]: undefined }));
   }, []);
 
-  // Computed styles - only compute when darkMode changes
   const modalBg = darkMode ? 'bg-gray-900' : 'bg-white';
   const textColor = darkMode ? 'text-white' : 'text-gray-900';
   const labelColor = darkMode ? 'text-gray-300' : 'text-gray-700';
   const inputBg = darkMode ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500';
-  const inputFocus = darkMode ? 'focus:ring-blue-500 focus:border-blue-500' : 'focus:ring-blue-500 focus:border-blue-500';
+  const inputFocus = 'focus:ring-blue-500 focus:border-blue-500';
   const errorText = darkMode ? 'text-red-400' : 'text-red-600';
-  const helpText = darkMode ? 'text-gray-500' : 'text-gray-500';
+  const helpText = 'text-gray-500';
   const secondaryBtn = darkMode ? 'border-gray-700 text-gray-300 hover:bg-gray-800' : 'border-gray-300 text-gray-700 hover:bg-gray-50';
-  const tabActive = darkMode ? 'bg-blue-600 text-white' : 'bg-blue-600 text-white';
+  const tabActive = 'bg-blue-600 text-white';
   const tabInactive = darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200';
   const exampleBg = darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-100 border-gray-400';
   const codeBg = darkMode ? 'bg-black bg-opacity-40' : 'bg-gray-200';
@@ -180,12 +169,12 @@ export default function AddAccountModal({ onClose, onSuccess, darkMode = false }
       });
       onSuccess();
       onClose();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to create account:', error);
       setAlertModal({
         isOpen: true,
         title: 'Error',
-        message: error.message || 'Failed to create account. Please check your inputs and try again.',
+        message: errorMessage(error, 'Failed to create account. Please check your inputs and try again.'),
         type: 'error',
       });
     } finally {
@@ -311,7 +300,7 @@ export default function AddAccountModal({ onClose, onSuccess, darkMode = false }
           }
 
           reject(new Error('Unknown JSON format. Please export from Google Authenticator or LastPass Authenticator.'));
-        } catch (error) {
+        } catch {
           reject(new Error('Invalid JSON file. Please check the file format.'));
         }
       };
@@ -371,7 +360,7 @@ export default function AddAccountModal({ onClose, onSuccess, darkMode = false }
           }
 
           resolve(accounts);
-        } catch (error) {
+        } catch {
           reject(new Error('Failed to parse CSV file. Please check the format.'));
         }
       };
@@ -430,11 +419,7 @@ export default function AddAccountModal({ onClose, onSuccess, darkMode = false }
       throw new Error('Please select a JSON file first.');
     }
 
-    try {
-      return await parseJSONFile(jsonFile);
-    } catch (error) {
-      throw error;
-    }
+    return parseJSONFile(jsonFile);
   }, [jsonFile, parseJSONFile]);
 
   const handleBulkImport = async () => {
@@ -479,11 +464,11 @@ export default function AddAccountModal({ onClose, onSuccess, darkMode = false }
             });
             return;
           }
-        } catch (error: any) {
+        } catch (error) {
           setAlertModal({
             isOpen: true,
             title: 'Import Error',
-            message: error.message || 'Failed to import CSV file. Please check the format.',
+            message: errorMessage(error, 'Failed to import CSV file. Please check the format.'),
             type: 'error',
           });
           return;
@@ -491,8 +476,6 @@ export default function AddAccountModal({ onClose, onSuccess, darkMode = false }
       }
 
       setIsSubmitting(true);
-      const errors: ImportError[] = [];
-      let successCount = 0;
 
       const validationErrors: ImportError[] = [];
       accounts.forEach((account) => {
@@ -515,17 +498,16 @@ export default function AddAccountModal({ onClose, onSuccess, darkMode = false }
         return;
       }
 
-      for (const account of accounts) {
-        try {
-          await accountsAPI.create(account);
-          successCount++;
-        } catch (error: any) {
-          errors.push({
-            line: account.line,
-            account,
-            error: error.message || 'Import failed',
-          });
-        }
+      // One batch write; a storage failure fails every line
+      let successCount = 0;
+      let errors: ImportError[] = [];
+      try {
+        successCount = await accountsAPI.createMany(
+          accounts.map(({ service, account_name, secret_key }) => ({ service, account_name, secret_key }))
+        );
+      } catch (error) {
+        const message = errorMessage(error, 'Import failed');
+        errors = accounts.map((account) => ({ line: account.line, account, error: message }));
       }
 
       setImportResults({
@@ -548,12 +530,12 @@ export default function AddAccountModal({ onClose, onSuccess, darkMode = false }
       }
 
       setIsSubmitting(false);
-    } catch (error: any) {
+    } catch (error) {
       setIsSubmitting(false);
       setAlertModal({
         isOpen: true,
         title: 'Import Error',
-        message: error.message || 'Failed to import accounts. Please try again.',
+        message: errorMessage(error, 'Failed to import accounts. Please try again.'),
         type: 'error',
       });
     }
@@ -562,7 +544,7 @@ export default function AddAccountModal({ onClose, onSuccess, darkMode = false }
   // Memoized mass import computations (only when mass tab is active)
   const parsedMassAccounts = useMemo(() => {
     return activeTab === 'mass' ? parseInput() : [];
-  }, [debouncedInputText, activeTab, parseInput]);
+  }, [activeTab, parseInput]);
 
   // Simplified stats - only calculate what's needed
   const massImportStats = useMemo(() => {
@@ -825,9 +807,6 @@ export default function AddAccountModal({ onClose, onSuccess, darkMode = false }
                       <label htmlFor="bulkInput" className={`block text-sm font-medium ${labelColor}`}>
                         Paste Your Accounts Below
                       </label>
-                      {/* <span className={`text-xs sm:text-sm ${helpText}`}>
-                        {parsedMassAccounts.length} account{parsedMassAccounts.length !== 1 ? 's' : ''} ready
-                      </span> */}
                     </div>
                     <textarea
                       id="bulkInput"
@@ -915,16 +894,6 @@ export default function AddAccountModal({ onClose, onSuccess, darkMode = false }
                       <li><strong>LastPass Authenticator</strong></li>
                     </ul>
                   </div>
-
-                  {/* <div className={`rounded-lg p-3 sm:p-4 ${darkMode ? 'bg-blue-900/30 border-blue-700' : 'bg-blue-50 border-blue-200'}`}>
-                    <p className={`font-semibold mb-2 text-sm sm:text-base ${darkMode ? 'text-blue-300' : 'text-blue-800'}`}>💡 How to Export:</p>
-                    <ol className={`text-xs sm:text-sm space-y-1 ${helpText} list-decimal list-inside`}>
-                      <li>Open your authenticator app</li>
-                      <li>Go to Settings and find "Export" option</li>
-                      <li>Save the JSON file to your device</li>
-                      <li>Upload the file below</li>
-                    </ol>
-                  </div> */}
                 </div>
               </div>
 
@@ -1038,8 +1007,8 @@ export default function AddAccountModal({ onClose, onSuccess, darkMode = false }
                       <div className={`rounded-lg border p-3 ${styles.subtleCardBg}`}>
                         <p className={`text-sm font-semibold ${textColor}`}>Example</p>
                         <div className={`mt-2 font-mono text-xs sm:text-sm ${helpText}`}>
-                          <p>"GitHub","richard@example.com","JBSWY3DPEHPK3PXP"</p>
-                          <p>"Google","dmusic@gmail.com","NB2W45DFOIZA===="</p>
+                          <p>&quot;GitHub&quot;,&quot;richard@example.com&quot;,&quot;JBSWY3DPEHPK3PXP&quot;</p>
+                          <p>&quot;Google&quot;,&quot;dmusic@gmail.com&quot;,&quot;NB2W45DFOIZA====&quot;</p>
                         </div>
                       </div>
 
@@ -1048,7 +1017,7 @@ export default function AddAccountModal({ onClose, onSuccess, darkMode = false }
                         <ul className={`mt-2 space-y-1 text-xs sm:text-sm ${helpText} list-disc list-inside`}>
                           <li>Import CSV files previously exported from this app</li>
                           <li>First row must be the header: Service,Account Name,Secret Key</li>
-                          <li>Data rows must have quoted fields: "Service","Account Name","Secret Key"</li>
+                          <li>Data rows must have quoted fields: &quot;Service&quot;,&quot;Account Name&quot;,&quot;Secret Key&quot;</li>
                         </ul>
                       </div>
                     </div>

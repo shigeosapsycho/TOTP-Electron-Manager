@@ -4,8 +4,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Account } from '@/types';
-import { accountsAPI } from '@/lib/api';
+import { Account, AccountUpdate } from '@/types';
+import { accountsAPI } from '@/lib/storage';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface BulkEditModalProps {
@@ -28,8 +28,8 @@ export default function BulkEditModal({ accounts, onClose, onSuccess, darkMode =
   const textColor = darkMode ? 'text-white' : 'text-gray-900';
   const labelColor = darkMode ? 'text-gray-300' : 'text-gray-700';
   const inputBg = darkMode ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500';
-  const inputFocus = darkMode ? 'focus:ring-blue-500 focus:border-blue-500' : 'focus:ring-blue-500 focus:border-blue-500';
-  const helpText = darkMode ? 'text-gray-500' : 'text-gray-500';
+  const inputFocus = 'focus:ring-blue-500 focus:border-blue-500';
+  const helpText = 'text-gray-500';
   const secondaryBtn = darkMode ? 'border-gray-700 text-gray-300 hover:bg-gray-800' : 'border-gray-300 text-gray-700 hover:bg-gray-50';
   const infoBg = darkMode ? 'bg-blue-900/50 border-blue-700 text-blue-200' : 'bg-blue-50 border-blue-200 text-blue-800';
   const successBg = darkMode ? 'bg-green-900/50 border-green-700 text-green-200' : 'bg-green-50 border-green-200 text-green-800';
@@ -44,16 +44,16 @@ export default function BulkEditModal({ accounts, onClose, onSuccess, darkMode =
     let updatedCount = 0;
     let failedCount = 0;
 
+    const updateData: AccountUpdate = {};
+    if (serviceName.trim()) {
+      updateData.service = serviceName.trim();
+    }
+    if (accountName.trim()) {
+      updateData.account_name = accountName.trim();
+    }
+
     for (const account of accounts) {
       try {
-        const updateData: any = {};
-        if (serviceName.trim()) {
-          updateData.service = serviceName.trim();
-        }
-        if (accountName.trim()) {
-          updateData.account_name = accountName.trim();
-        }
-
         await accountsAPI.update(account.id, updateData);
         updatedCount++;
       } catch (error) {

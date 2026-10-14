@@ -1,23 +1,25 @@
 /**
  * Utility functions for TOTP Manager
  */
+import type { Account } from '@/types';
 
 /**
- * Format seconds remaining as MM:SS
- */
-export function formatTimeRemaining(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.ceil(seconds % 60);
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-}
-
-/**
- * Format milliseconds remaining as SS (shows only seconds, but uses milliseconds for smooth progress bar)
+ * Format milliseconds remaining as whole seconds, zero padded (e.g. "07")
  */
 export function formatTimeRemainingMs(milliseconds: number): string {
   const seconds = Math.ceil(milliseconds / 1000);
-  const secs = seconds % 60;
-  return secs.toString().padStart(2, '0');
+  return (seconds % 60).toString().padStart(2, '0');
+}
+
+export type CountdownTone = 'ok' | 'warn' | 'critical';
+
+/**
+ * Bucket the time left in a period into a color tone
+ */
+export function getCountdownTone(milliseconds: number): CountdownTone {
+  if (milliseconds > 15000) return 'ok';
+  if (milliseconds > 5000) return 'warn';
+  return 'critical';
 }
 
 /**
@@ -34,23 +36,6 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 }
 
 /**
- * Get percentage of time remaining (for progress bar)
- */
-export function getTimePercentage(timeRemaining: number, validFor: number = 30): number {
-  return (timeRemaining / validFor) * 100;
-}
-
-/**
- * Determine color based on time remaining
- */
-export function getTimeColor(timeRemaining: number, validFor: number = 30): string {
-  const percentage = getTimePercentage(timeRemaining, validFor);
-  if (percentage > 50) return 'text-green-500';
-  if (percentage > 20) return 'text-yellow-500';
-  return 'text-red-500';
-}
-
-/**
  * Format code as XXX XXX (with space in middle)
  */
 export function formatCode(code: string): string {
@@ -58,4 +43,28 @@ export function formatCode(code: string): string {
     return `${code.slice(0, 3)} ${code.slice(3)}`;
   }
   return code;
+}
+
+/**
+ * Pinned accounts first, then by stored order
+ */
+export function sortAccounts(accounts: Account[]): Account[] {
+  return [...accounts].sort((a, b) => {
+    if (a.is_pinned && !b.is_pinned) return -1;
+    if (!a.is_pinned && b.is_pinned) return 1;
+    return (a.order || 0) - (b.order || 0);
+  });
+}
+
+/**
+ * Keep accounts whose service or account name contains the query (case insensitive)
+ */
+export function filterAccounts(accounts: Account[], query: string): Account[] {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return accounts;
+  return accounts.filter(
+    (account) =>
+      account.service.toLowerCase().includes(needle) ||
+      account.account_name.toLowerCase().includes(needle)
+  );
 }
